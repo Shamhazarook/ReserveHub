@@ -163,30 +163,8 @@ export default function Home() {
           </section>
         </div>
 
-        <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-100 p-5">
-            <h3 className="font-semibold">Upcoming Reservations</h3>
-            <p className="mt-1 text-sm text-slate-500">Example bookings for the dashboard preview</p>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {bookings.map((booking) => (
-              <div key={booking.resource} className="flex flex-wrap items-center justify-between gap-4 p-5">
-                <div>
-                  <p className="font-semibold">{booking.resource}</p>
-                  <p className="mt-1 text-sm text-slate-500">{booking.person}</p>
-                  <p className="mt-1 text-xs text-slate-500">{booking.time}</p>
-                </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  booking.status === "Approved"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-amber-50 text-amber-700"
-                }`}>
-                  {booking.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
+        
+             
 
         <footer className="py-8 text-center text-xs text-slate-400">
           ReserveHub · Resource Reservation Management System

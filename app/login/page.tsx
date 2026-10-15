@@ -2,31 +2,44 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+
+type LoginRole = "employee" | "admin";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [role, setRole] = useState<LoginRole>("employee");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (searchParams.get("role") === "admin") {
+      setRole("admin");
+    }
+
     if (searchParams.get("registered") === "1") {
       setMessage("Registration successful! Please log in.");
     }
   }, [searchParams]);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMessage("");
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const endpoint =
+        role === "admin"
+          ? "/api/admin/login"
+          : "/api/auth/login";
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -35,11 +48,16 @@ function LoginForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage(data.message || "Login failed.");
+        setMessage(data.message || "Login failed. Please try again.");
         return;
       }
 
-      router.push("/");
+      if (role === "admin") {
+  router.replace("/admin/dashboard");
+} else {
+  router.replace("/");
+}
+
 router.refresh();
     } catch {
       setMessage("Unable to connect. Please try again.");
@@ -56,30 +74,60 @@ router.refresh();
         </h1>
 
         <p className="mt-2 text-center text-sm text-slate-500">
-          Employee Login
+          Resource Reservation Management System
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium">
+            <label
+              htmlFor="role"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
+              Login As
+            </label>
+
+            <select
+              id="role"
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value as LoginRole);
+                setMessage("");
+              }}
+              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+            >
+              <option value="employee">Employee</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
               Email Address
             </label>
+
             <input
               id="email"
               type="email"
               required
-              autoComplete="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
-              placeholder="Enter your registered email"
+              placeholder="Enter your email"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium">
+            <label
+              htmlFor="password"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
               Password
             </label>
+
             <input
               id="password"
               type="password"
@@ -101,23 +149,35 @@ router.refresh();
             </p>
           )}
 
+          {role === "admin" && (
+            <p className="text-sm text-slate-500">
+              Administrator access is for authorized accounts only.
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "Logging in..." : "Log In"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
-          Don't have an account?{" "}
-          <Link
-            href="/register"
-            className="font-semibold text-blue-600 hover:underline"
-          >
-            Register here
-          </Link>
+        {role === "employee" && (
+          <p className="mt-6 text-center text-sm text-slate-600">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="font-semibold text-blue-600 hover:underline"
+            >
+              Register here
+            </Link>
+          </p>
+        )}
+
+        <p className="mt-5 text-center text-xs text-slate-400">
+          Secure Resource Reservation Management
         </p>
       </div>
     </main>
