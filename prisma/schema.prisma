@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  EMPLOYEE
+  ADMIN
+}
+
+enum ResourceStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REJECTED
+}
+
+enum ReservationType {
+  SELF
+  EMPLOYEE
+  VISITOR
+}
+
+model User {
+  id             String   @id @default(cuid())
+  fullName       String
+  email          String   @unique
+  employeeNumber String?  @unique
+  passwordHash   String
+  role           UserRole @default(EMPLOYEE)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  reservations        Reservation[] @relation("ReservationForEmployee")
+  createdReservations Reservation[] @relation("ReservationCreatedBy")
+}
+
+model Resource {
+  id          String         @id @default(cuid())
+  name        String
+  category    String
+  location    String
+  description String?
+  status      ResourceStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  reservations Reservation[]
+}
+
+model Reservation {
+  id          String  @id @default(cuid())
+  bookingId   String? @unique
+  userId      String?
+  createdById String?
+  resourceId  String
+
+  bookingFor ReservationType   @default(SELF)
+  startTime  DateTime          @db.Timestamptz(3)
+  endTime    DateTime          @db.Timestamptz(3)
+  status     ReservationStatus @default(CONFIRMED)
+
+  visitorName           String?
+  visitorEmail          String?
+  confirmationTokenHash String?   @unique
+  confirmationExpiresAt DateTime?
+  recipientConfirmedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee User? @relation("ReservationForEmployee", fields: [userId], references: [id], onDelete: SetNull)
+
+  createdBy User? @relation("ReservationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([createdById])
+  @@index([resourceId, startTime, endTime])
+  @@index([status, startTime])
+}
+
+model BookingSequence {
+  yearMonth  String   @id
+  lastNumber Int      @default(0)
+  updatedAt  DateTime @updatedAt
+}
